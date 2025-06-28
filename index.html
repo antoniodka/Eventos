@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Organizador de Eventos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --accent: #3498db;
+      --danger: #e74c3c;
+      --warning: #f1c40f;
+      --bg: #f8f9fa;
+      --white: #fff;
+      --radius: 12px;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+    }
+
+    header {
+      background: var(--primary);
+      color: var(--white);
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
+
+    main {
+      padding: 1rem;
+      max-width: 700px;
+      margin: auto;
+    }
+
+    #addEventBtn {
+      width: 100%;
+      background: var(--accent);
+      color: var(--white);
+      border: none;
+      padding: 1rem;
+      font-size: 1.1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+
+    .event {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .event-info {
+      flex: 1;
+      font-size: 0.95rem;
+    }
+
+    .event-info strong {
+      font-size: 1rem;
+      color: var(--primary);
+    }
+
+    .event-buttons button {
+      margin-left: 0.5rem;
+      padding: 0.6rem 0.8rem;
+      border: none;
+      border-radius: 50%;
+      font-size: 1rem;
+      color: var(--white);
+      cursor: pointer;
+    }
+
+    .edit {
+      background: var(--warning);
+    }
+
+    .delete {
+      background: var(--danger);
+    }
+
+    dialog {
+      border: none;
+      border-radius: var(--radius);
+      width: 90%;
+      max-width: 400px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    dialog input, dialog label {
+      width: 100%;
+      margin-bottom: 0.8rem;
+      font-size: 1rem;
+    }
+
+    dialog input {
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    dialog button {
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius);
+      border: none;
+      margin-top: 0.5rem;
+      margin-right: 0.5rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    #saveBtn {
+      background: var(--accent);
+      color: var(--white);
+    }
+
+    #cancelBtn {
+      background: #ccc;
+    }
+
+#addEventBtn, #copyAllBtn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  margin-bottom: 0.8rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.1s ease;
+}
+
+#addEventBtn {
+  background: var(--accent);
+  color: var(--white);
+}
+
+#copyAllBtn {
+  background: #27ae60; /* verde profesional */
+  color: white;
+}
+
+#addEventBtn:active,
+#copyAllBtn:active {
+  transform: scale(0.98);
+}
+  </style>
+</head>
+<body>
+
+<header>📅 Organizador de Eventos</header>
+
+
+<main>
+  <button id="addEventBtn">➕ Agregar Evento</button>
+  <button id="copyAllBtn">📋 Copiar Todo</button>
+  <div id="eventList"></div>
+</main>
+
+
+<dialog id="eventDialog">
+  <form method="dialog" id="eventForm">
+    <input type="hidden" id="eventId">
+    <label for="fecha">Fecha</label>
+    <input type="date" id="fecha" required>
+
+    <label for="hora">Hora</label>
+    <input type="time" id="hora" required>
+
+    <label for="lugar">Lugar</label>
+    <input type="text" id="lugar" placeholder="Lugar del evento" required>
+
+    <div style="text-align: right;">
+      <button id="saveBtn" type="submit">Guardar</button>
+      <button type="button" id="cancelBtn">Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+
+<script>
+  let db;
+  const request = indexedDB.open("EventosDB", 1);
+
+  request.onupgradeneeded = (e) => {
+    db = e.target.result;
+    const store = db.createObjectStore("eventos", { keyPath: "id", autoIncrement: true });
+    store.createIndex("fecha", "fecha", { unique: false });
+  };
+
+  request.onsuccess = (e) => {
+    db = e.target.result;
+    mostrarEventos();
+  };
+
+  request.onerror = (e) => {
+    console.error("IndexedDB error:", e.target.errorCode);
+  };
+
+  const eventList = document.getElementById('eventList');
+  const dialog = document.getElementById('eventDialog');
+  const form = document.getElementById('eventForm');
+  const fechaInput = document.getElementById('fecha');
+  const horaInput = document.getElementById('hora');
+  const lugarInput = document.getElementById('lugar');
+  const eventIdInput = document.getElementById('eventId');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const copyAllBtn = document.getElementById('copyAllBtn');
+
+  document.getElementById('addEventBtn').onclick = () => {
+    form.reset();
+    eventIdInput.value = '';
+    dialog.showModal();
+  };
+
+  cancelBtn.onclick = () => dialog.close();
+
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const evento = {
+      fecha: fechaInput.value,
+      hora: horaInput.value,
+      lugar: lugarInput.value
+    };
+    const id = parseInt(eventIdInput.value);
+    if (id) {
+      evento.id = id;
+      actualizarEvento(evento);
+    } else {
+      guardarEvento(evento);
+    }
+    dialog.close();
+  };
+
+  function guardarEvento(evento) {
+    const tx = db.transaction("eventos", "readwrite");
+    const store = tx.objectStore("eventos");
+    store.add(evento).onsuccess = mostrarEventos;
+  }
+
+  function actualizarEvento(evento) {
+    const tx = db.transaction("eventos", "readwrite");
+    const store = tx.objectStore("eventos");
+    store.put(evento).onsuccess = mostrarEventos;
+  }
+
+  function eliminarEvento(id) {
+    const tx = db.transaction("eventos", "readwrite");
+    const store = tx.objectStore("eventos");
+    store.delete(id).onsuccess = mostrarEventos;
+  }
+
+  function mostrarEventos() {
+    const tx = db.transaction("eventos", "readonly");
+    const store = tx.objectStore("eventos");
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const eventos = request.result.sort((a, b) => {
+        return new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`);
+      });
+
+      eventList.innerHTML = "";
+      eventos.forEach(evento => {
+        const div = document.createElement("div");
+        div.className = "event";
+
+        const info = document.createElement("div");
+        info.className = "event-info";
+        info.innerHTML = `<strong>${formatearFecha(evento.fecha)}</strong> - ${evento.hora}<br>${evento.lugar}`;
+
+        const btns = document.createElement("div");
+        btns.className = "event-buttons";
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "edit";
+        editBtn.innerHTML = "✏️";
+        editBtn.onclick = () => {
+          eventIdInput.value = evento.id;
+          fechaInput.value = evento.fecha;
+          horaInput.value = evento.hora;
+          lugarInput.value = evento.lugar;
+          dialog.showModal();
+        };
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete";
+        deleteBtn.innerHTML = "🗑️";
+        deleteBtn.onclick = () => {
+          if (confirm("¿Eliminar este evento?")) {
+            eliminarEvento(evento.id);
+          }
+        };
+
+        btns.appendChild(editBtn);
+        btns.appendChild(deleteBtn);
+        div.appendChild(info);
+        div.appendChild(btns);
+        eventList.appendChild(div);
+      });
+    };
+  }
+
+function formatearFecha(fechaStr) {
+  const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const fecha = new Date(fechaStr);
+  const diaSemana = dias[fecha.getDay()];
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const año = fecha.getFullYear();
+  return `${diaSemana}, ${dia}/${mes}/${año}`;
+}
+
+  // 📋 Función para copiar todos los eventos
+  copyAllBtn.onclick = () => {
+    const tx = db.transaction("eventos", "readonly");
+    const store = tx.objectStore("eventos");
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const eventos = request.result.sort((a, b) => {
+        return new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`);
+      });
+
+      if (eventos.length === 0) {
+        alert("No hay eventos para copiar.");
+        return;
+      }
+
+      let texto = "";
+      eventos.forEach(evento => {
+        texto += `📍 Evento\n📅 Fecha: ${evento.fecha}\n🕒 Hora: ${evento.hora}\n📌 Lugar: ${evento.lugar}\n------------------------------\n\n`;
+      });
+
+      navigator.clipboard.writeText(texto).then(() => {
+        alert("¡Eventos copiados al portapapeles!");
+      }).catch(err => {
+        alert("Error al copiar: " + err);
+      });
+    };
+  };
+</script>
+
+</body>
+</html>
