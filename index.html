@@ -8,6 +8,7 @@
     :root {
       --primary: #2c3e50;
       --accent: #3498db;
+      --success: #27ae60;
       --danger: #e74c3c;
       --warning: #f1c40f;
       --bg: #f8f9fa;
@@ -37,17 +38,31 @@
       margin: auto;
     }
 
-    #addEventBtn {
+    #addEventBtn, #copyAllBtn {
       width: 100%;
-      background: var(--accent);
-      color: var(--white);
-      border: none;
       padding: 1rem;
       font-size: 1.1rem;
+      font-weight: 600;
+      border: none;
       border-radius: var(--radius);
-      margin-bottom: 1rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       cursor: pointer;
+      margin-bottom: 0.8rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.1s ease;
+    }
+
+    #addEventBtn {
+      background: var(--accent);
+      color: var(--white);
+    }
+
+    #copyAllBtn {
+      background: var(--success);
+      color: white;
+    }
+
+    #addEventBtn:active, #copyAllBtn:active {
+      transform: scale(0.98);
     }
 
     .event {
@@ -128,40 +143,11 @@
     #cancelBtn {
       background: #ccc;
     }
-
-#addEventBtn, #copyAllBtn {
-  width: 100%;
-  padding: 1rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  margin-bottom: 0.8rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  transition: transform 0.1s ease;
-}
-
-#addEventBtn {
-  background: var(--accent);
-  color: var(--white);
-}
-
-#copyAllBtn {
-  background: #27ae60; /* verde profesional */
-  color: white;
-}
-
-#addEventBtn:active,
-#copyAllBtn:active {
-  transform: scale(0.98);
-}
   </style>
 </head>
 <body>
 
 <header>📅 Organizador de Eventos</header>
-
 
 <main>
   <button id="addEventBtn">➕ Agregar Evento</button>
@@ -169,26 +155,21 @@
   <div id="eventList"></div>
 </main>
 
-
 <dialog id="eventDialog">
   <form method="dialog" id="eventForm">
     <input type="hidden" id="eventId">
     <label for="fecha">Fecha</label>
     <input type="date" id="fecha" required>
-
     <label for="hora">Hora</label>
     <input type="time" id="hora" required>
-
     <label for="lugar">Lugar</label>
     <input type="text" id="lugar" placeholder="Lugar del evento" required>
-
     <div style="text-align: right;">
       <button id="saveBtn" type="submit">Guardar</button>
       <button type="button" id="cancelBtn">Cancelar</button>
     </div>
   </form>
 </dialog>
-
 
 <script>
   let db;
@@ -218,6 +199,16 @@
   const eventIdInput = document.getElementById('eventId');
   const cancelBtn = document.getElementById('cancelBtn');
   const copyAllBtn = document.getElementById('copyAllBtn');
+
+  const formatearFecha = (fechaStr) => {
+    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+    const fecha = new Date(fechaStr + "T00:00:00");
+    const diaSemana = dias[fecha.getDay()];
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const año = fecha.getFullYear();
+    return `${diaSemana}, ${dia}/${mes}/${año}`;
+  };
 
   document.getElementById('addEventBtn').onclick = () => {
     form.reset();
@@ -313,17 +304,6 @@
     };
   }
 
-function formatearFecha(fechaStr) {
-  const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-  const fecha = new Date(fechaStr);
-  const diaSemana = dias[fecha.getDay()];
-  const dia = String(fecha.getDate()).padStart(2, '0');
-  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-  const año = fecha.getFullYear();
-  return `${diaSemana}, ${dia}/${mes}/${año}`;
-}
-
-  // 📋 Función para copiar todos los eventos
   copyAllBtn.onclick = () => {
     const tx = db.transaction("eventos", "readonly");
     const store = tx.objectStore("eventos");
@@ -341,13 +321,13 @@ function formatearFecha(fechaStr) {
 
       let texto = "";
       eventos.forEach(evento => {
-        texto += `📍 Evento\n📅 Fecha: ${evento.fecha}\n🕒 Hora: ${evento.hora}\n📌 Lugar: ${evento.lugar}\n------------------------------\n\n`;
+        texto += `📍 Evento\n📅 Fecha: ${formatearFecha(evento.fecha)}\n🕒 Hora: ${evento.hora}\n📌 Lugar: ${evento.lugar}\n------------------------------\n\n`;
       });
 
       navigator.clipboard.writeText(texto).then(() => {
-        alert("¡Eventos copiados al portapapeles!");
+        alert("✅ Eventos copiados al portapapeles.");
       }).catch(err => {
-        alert("Error al copiar: " + err);
+        alert("❌ Error al copiar: " + err);
       });
     };
   };
