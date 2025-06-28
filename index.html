@@ -148,6 +148,8 @@
     <button id="sortByEventBtn">📅 Ordenar por evento</button>
     <button id="sortByMountBtn">🏗️ Ordenar por montaje</button>
     <button id="copyAllBtn">📋 Copiar todo</button>
+
+<h2 id="tituloOrganizacion" style="text-align:center; margin-top:1rem; color:#2c3e50;"></h2>
     <div id="eventos"></div>
   </main>  <dialog id="eventDialog">
     <form method="dialog" id="eventForm">
@@ -257,15 +259,17 @@
     };
 
     document.getElementById("sortByEventBtn").onclick = () => {
-      eventos.sort((a, b) => new Date(a.fechaEvento) - new Date(b.fechaEvento));
-      mostrarMontajeEnNegrita = false;
-      mostrarEventos();
-    };
-    document.getElementById("sortByMountBtn").onclick = () => {
-      eventos.sort((a, b) => new Date(a.fechaMontaje) - new Date(b.fechaMontaje));
-      mostrarMontajeEnNegrita = true;
-      mostrarEventos();
-    };
+  eventos.sort((a, b) => new Date(a.fechaEvento) - new Date(b.fechaEvento));
+  mostrarMontajeEnNegrita = false;
+  document.getElementById("tituloOrganizacion").textContent = "🗓 Eventos organizados por fecha de evento";
+  mostrarEventos();
+};
+document.getElementById("sortByMountBtn").onclick = () => {
+  eventos.sort((a, b) => new Date(a.fechaMontaje) - new Date(b.fechaMontaje));
+  mostrarMontajeEnNegrita = true;
+  document.getElementById("tituloOrganizacion").textContent = "🏗 Eventos organizados por fecha de montaje";
+  mostrarEventos();
+};
 
     document.getElementById("copyAllBtn").onclick = () => {
       let text = eventos.map(e => `🗓 ${formatearFecha(e.fechaEvento)} ${e.horaEvento}\n🏗 ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}\n📍 ${e.lugar}\n---`).join("\n\n");
