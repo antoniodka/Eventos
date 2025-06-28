@@ -2,7 +2,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Organizador de Eventos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
     :root {
       --primary: #2c3e50;
       --accent: #3498db;
@@ -91,165 +92,241 @@
       border-radius: 8px;
       border: 1px solid #ccc;
     }
+    #passwordDialog form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    #passwordDialog input {
+      padding: 0.6rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    #passwordDialog button {
+      background-color: var(--primary);
+      color: white;
+      padding: 0.6rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .dialog-buttons {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .dialog-buttons button {
+      flex: 1;
+      padding: 0.6rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .cancel-btn {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .save-btn {
+      background: #d4edda;
+      color: #155724;
+    }
+    .negrita {
+      font-weight: bold;
+    }
+    .normal {
+      font-weight: normal;
+    }
   </style>
 </head>
-<body><header>📅 Organizador de Eventos</header>
-<main>
-  <button id="addEventBtn">➕ Agregar Evento</button>
-  <button id="copyAllBtn">📋 Copiar Todo</button>
-  <button id="sortByEventBtn">Ordenar por Fecha de Evento</button>
-  <button id="sortByMountBtn">Ordenar por Fecha de Montaje</button>
-  <div id="eventList"></div>
-</main><dialog id="eventDialog">
-  <form id="eventForm">
-    <input type="hidden" id="eventId">
-    <label>Fecha del Evento</label>
-    <input type="date" id="fechaEvento" required>
-    <label>Hora del Evento</label>
-    <input type="time" id="horaEvento" required>
-    <label>Fecha de Montaje</label>
-    <input type="date" id="fechaMontaje" required>
-    <label>Hora de Montaje</label>
-    <input type="time" id="horaMontaje" required>
-    <label>Lugar</label>
-    <input type="text" id="lugar" required>
-    <div style="text-align: right;">
-      <button type="button" id="saveBtn">Guardar</button>
-      <button type="button" id="cancelBtn">Cancelar</button>
-    </div>
-  </form>
-</dialog><script type="module">
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js';
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, orderBy, query } from 'https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js';
+<body>
+  <header>Organizador de Eventos</header>
+  <main>
+    <button id="addEventBtn">➕ Agregar evento</button>
+    <button id="sortByEventBtn">📅 Ordenar por evento</button>
+    <button id="sortByMountBtn">🏗️ Ordenar por montaje</button>
+    <button id="copyAllBtn">📋 Copiar todo</button>
+    <div id="eventos"></div>
+  </main>  <dialog id="eventDialog">
+    <form method="dialog" id="eventForm">
+      <input type="hidden" id="eventId">
+      <label>Fecha evento:<input type="date" id="fechaEvento" required></label>
+      <label>Hora evento:<input type="time" id="horaEvento" required></label>
+      <label>Fecha montaje:<input type="date" id="fechaMontaje" required></label>
+      <label>Hora montaje:<input type="time" id="horaMontaje" required></label>
+      <label>Lugar:<input type="text" id="lugar" required></label>
+      <div class="dialog-buttons">
+        <button type="button" class="cancel-btn" onclick="document.getElementById('eventDialog').close()">Cancelar</button>
+        <button type="submit" class="save-btn">Guardar</button>
+      </div>
+    </form>
+  </dialog>  <dialog id="passwordDialog">
+    <form method="dialog">
+      <label for="passwordInput">🔒 Ingresa la clave para modificar:</label>
+      <input type="password" id="passwordInput" placeholder="Clave de acceso" autofocus required>
+      <button id="checkPasswordBtn" type="button">Ingresar</button>
+    </form>
+  </dialog>  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDl7eqNL5s9El_TaZpTE6i7-PwgubbtPkM",
-  authDomain: "eventos-bc9d1.firebaseapp.com",
-  projectId: "eventos-bc9d1",
-  storageBucket: "eventos-bc9d1.appspot.com",
-  messagingSenderId: "831523591170",
-  appId: "1:831523591170:web:c3e6b3367df0d47cf3c31b",
-  measurementId: "G-TFN83DR6C0"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyDl7eqNL5s9El_TaZpTE6i7-PwgubbtPkM",
+      authDomain: "eventos-bc9d1.firebaseapp.com",
+      projectId: "eventos-bc9d1",
+      storageBucket: "eventos-bc9d1.appspot.com",
+      messagingSenderId: "831523591170",
+      appId: "1:831523591170:web:c3e6b3367df0d47cf3c31b",
+      measurementId: "G-TFN83DR6C0"
+    };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-const form = document.getElementById('eventForm');
-const dialog = document.getElementById('eventDialog');
-const eventList = document.getElementById('eventList');
-let sortBy = 'fechaEvento';
+    const dialog = document.getElementById("eventDialog");
+    const eventosDiv = document.getElementById("eventos");
+    const form = document.getElementById("eventForm");
 
-function formatearFecha(fechaStr) {
+    let eventos = [];
+    let mostrarMontajeEnNegrita = false;
+
+    function formatearFecha(fechaStr) {
   const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  const fecha = new Date(fechaStr + 'T00:00:00');
-  return `${dias[fecha.getDay()]}, ${fecha.toLocaleDateString('es-CO')}`;
+  const [year, month, day] = fechaStr.split('-');
+  const fecha = new Date(Number(year), Number(month) - 1, Number(day));
+  return dias[fecha.getDay()] + ', ' + fecha.toLocaleDateString();
 }
 
-document.getElementById('addEventBtn').onclick = () => {
-  form.reset();
-  document.getElementById('eventId').value = '';
-  dialog.showModal();
-};
-
-document.getElementById('cancelBtn').onclick = () => dialog.close();
-
-document.getElementById('saveBtn').onclick = async () => {
-  const fechaEv = new Date(document.getElementById('fechaEvento').value);
-  const fechaMont = new Date(document.getElementById('fechaMontaje').value);
-
-  if (fechaMont > fechaEv) {
-    alert("⚠️ La fecha de montaje no puede ser posterior a la fecha del evento.");
-    return;
-  }
-
-  const evento = {
-    fechaEvento: document.getElementById('fechaEvento').value,
-    horaEvento: document.getElementById('horaEvento').value,
-    fechaMontaje: document.getElementById('fechaMontaje').value,
-    horaMontaje: document.getElementById('horaMontaje').value,
-    lugar: document.getElementById('lugar').value
-  };
-
-  const id = document.getElementById('eventId').value;
-  if (id) {
-    await updateDoc(doc(db, 'eventos', id), evento);
-  } else {
-    await addDoc(collection(db, 'eventos'), evento);
-  }
-
-  dialog.close();
-  cargarEventos();
-};
-
-document.getElementById('sortByEventBtn').onclick = () => {
-  sortBy = 'fechaEvento';
-  cargarEventos();
-};
-
-document.getElementById('sortByMountBtn').onclick = () => {
-  sortBy = 'fechaMontaje';
-  cargarEventos();
-};
-
-async function cargarEventos() {
-  eventList.innerHTML = '';
-  const q = query(collection(db, 'eventos'), orderBy(sortBy));
-  const res = await getDocs(q);
-  res.forEach(docSnap => {
-    const e = docSnap.data();
-    const div = document.createElement('div');
-    div.className = 'event';
-    div.innerHTML = `
-  <div class="event-info">
-    <strong>${formatearFecha(e.fechaEvento)} ${e.horaEvento}</strong><br>
-    <em>Montaje:</em> ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}<br>
-    <em>Lugar:</em> ${e.lugar}
-  </div>
-  <div class="event-actions">
-    <button onclick="editar('${docSnap.id}')">✏️</button>
-    <button onclick="eliminar('${docSnap.id}')">🗑️</button>
-  </div>
-`;
-    eventList.appendChild(div);
-  });
-}
-
-window.editar = async (id) => {
-  const d = await getDocs(collection(db, 'eventos'));
-  d.forEach(docSnap => {
-    if (docSnap.id === id) {
-      const e = docSnap.data();
-      document.getElementById('eventId').value = id;
-      document.getElementById('fechaEvento').value = e.fechaEvento;
-      document.getElementById('horaEvento').value = e.horaEvento;
-      document.getElementById('fechaMontaje').value = e.fechaMontaje;
-      document.getElementById('horaMontaje').value = e.horaMontaje;
-      document.getElementById('lugar').value = e.lugar;
-      dialog.showModal();
+    async function cargarEventos() {
+      eventosDiv.innerHTML = "Cargando...";
+      const query = await getDocs(collection(db, 'eventos'));
+      eventos = [];
+      eventosDiv.innerHTML = "";
+      query.forEach(docSnap => {
+        const e = docSnap.data();
+        eventos.push({...e, id: docSnap.id});
+      });
+      mostrarEventos();
     }
-  });
-};
 
-window.eliminar = async (id) => {
-  if (confirm('¿Eliminar este evento?')) {
-    await deleteDoc(doc(db, 'eventos', id));
+    function mostrarEventos() {
+      eventosDiv.innerHTML = "";
+      eventos.forEach(e => {
+        const div = document.createElement("div");
+        div.className = "event";
+        div.innerHTML = `
+          <div class="event-info">
+            <div class="${mostrarMontajeEnNegrita ? 'normal' : 'negrita'}">${formatearFecha(e.fechaEvento)} ${e.horaEvento}</div>
+            <div class="${mostrarMontajeEnNegrita ? 'negrita' : 'normal'}">Montaje: ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}</div>
+            <div><em>Lugar:</em> ${e.lugar}</div>
+          </div>
+          <div class="event-actions">
+            <button onclick="editar('${e.id}')">✏️</button>
+            <button onclick="eliminar('${e.id}')">🗑️</button>
+          </div>
+        `;
+        eventosDiv.appendChild(div);
+      });
+    }
+
+    form.onsubmit = async e => {
+      e.preventDefault();
+      const fechaEvento = form.fechaEvento.value;
+      const horaEvento = form.horaEvento.value;
+      const fechaMontaje = form.fechaMontaje.value;
+      const horaMontaje = form.horaMontaje.value;
+      const lugar = form.lugar.value;
+
+      if (new Date(`${fechaMontaje}T${horaMontaje}`) > new Date(`${fechaEvento}T${horaEvento}`)) {
+        alert("❌ La fecha de montaje no puede ser posterior al evento");
+        return;
+      }
+
+      const nuevo = { fechaEvento, horaEvento, fechaMontaje, horaMontaje, lugar };
+
+      if (form.eventId.value) {
+        await updateDoc(doc(db, 'eventos', form.eventId.value), nuevo);
+      } else {
+        await addDoc(collection(db, 'eventos'), nuevo);
+      }
+
+      dialog.close();
+      cargarEventos();
+    };
+
+    document.getElementById("sortByEventBtn").onclick = () => {
+      eventos.sort((a, b) => new Date(a.fechaEvento) - new Date(b.fechaEvento));
+      mostrarMontajeEnNegrita = false;
+      mostrarEventos();
+    };
+    document.getElementById("sortByMountBtn").onclick = () => {
+      eventos.sort((a, b) => new Date(a.fechaMontaje) - new Date(b.fechaMontaje));
+      mostrarMontajeEnNegrita = true;
+      mostrarEventos();
+    };
+
+    document.getElementById("copyAllBtn").onclick = () => {
+      let text = eventos.map(e => `🗓 ${formatearFecha(e.fechaEvento)} ${e.horaEvento}\n🏗 ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}\n📍 ${e.lugar}\n---`).join("\n\n");
+      navigator.clipboard.writeText(text);
+      alert("📋 Lista copiada al portapapeles");
+    };
+
+    let passwordValidated = false;
+    function requirePassword(action) {
+      if (!passwordValidated) {
+        const dialogPass = document.getElementById('passwordDialog');
+        const input = document.getElementById('passwordInput');
+        const checkBtn = document.getElementById('checkPasswordBtn');
+
+        dialogPass.showModal();
+        checkBtn.onclick = () => {
+          if (input.value === '1253') {
+            passwordValidated = true;
+            dialogPass.close();
+            action();
+          } else {
+            alert("❌ Clave incorrecta");
+          }
+        };
+      } else {
+        action();
+      }
+    }
+
+    document.getElementById("addEventBtn").onclick = () => {
+      requirePassword(() => {
+        form.reset();
+        form.eventId.value = "";
+        dialog.showModal();
+      });
+    };
+
+    window.eliminar = id => {
+      requirePassword(async () => {
+        if (confirm("¿Eliminar este evento?")) {
+          await deleteDoc(doc(db, 'eventos', id));
+          cargarEventos();
+        }
+      });
+    };
+
+    window.editar = id => {
+      requirePassword(async () => {
+        const evento = eventos.find(e => e.id === id);
+        if (evento) {
+          form.eventId.value = id;
+          form.fechaEvento.value = evento.fechaEvento;
+          form.horaEvento.value = evento.horaEvento;
+          form.fechaMontaje.value = evento.fechaMontaje;
+          form.horaMontaje.value = evento.horaMontaje;
+          form.lugar.value = evento.lugar;
+          dialog.showModal();
+        }
+      });
+    };
+
     cargarEventos();
-  }
-};
-
-document.getElementById('copyAllBtn').onclick = async () => {
-  const q = query(collection(db, 'eventos'), orderBy(sortBy));
-  const res = await getDocs(q);
-  let texto = '';
-  res.forEach(docSnap => {
-    const e = docSnap.data();
-    texto += `📍 Evento\n📅 Evento: ${formatearFecha(e.fechaEvento)} ${e.horaEvento}\n🔧 Montaje: ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}\n📌 Lugar: ${e.lugar}\n------------------------------\n\n`;
-  });
-  await navigator.clipboard.writeText(texto);
-  alert("✅ Copiado al portapapeles");
-};
-
-cargarEventos();
-</script></body>
+  </script></body>
 </html>
