@@ -1,28 +1,23 @@
-<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html><html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Organizador de Eventos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <style>
     :root {
       --primary: #2c3e50;
       --accent: #3498db;
       --success: #27ae60;
       --danger: #e74c3c;
-      --warning: #f1c40f;
       --bg: #f8f9fa;
       --white: #fff;
       --radius: 12px;
     }
-
     body {
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', sans-serif;
       background: var(--bg);
     }
-
     header {
       background: var(--primary);
       color: var(--white);
@@ -31,14 +26,12 @@
       font-size: 1.4rem;
       font-weight: bold;
     }
-
     main {
       padding: 1rem;
       max-width: 700px;
       margin: auto;
     }
-
-    #addEventBtn, #copyAllBtn {
+    button {
       width: 100%;
       padding: 1rem;
       font-size: 1.1rem;
@@ -50,21 +43,10 @@
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       transition: transform 0.1s ease;
     }
-
-    #addEventBtn {
-      background: var(--accent);
-      color: var(--white);
-    }
-
-    #copyAllBtn {
-      background: var(--success);
-      color: white;
-    }
-
-    #addEventBtn:active, #copyAllBtn:active {
-      transform: scale(0.98);
-    }
-
+    #addEventBtn { background: var(--accent); color: var(--white); }
+    #copyAllBtn { background: var(--success); color: white; }
+    #sortByEventBtn, #sortByMountBtn { background: #888; color: white; }
+    button:active { transform: scale(0.98); }
     .event {
       background: var(--white);
       border-radius: var(--radius);
@@ -73,265 +55,201 @@
       box-shadow: 0 1px 5px rgba(0,0,0,0.1);
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
-
     .event-info {
-      flex: 1;
-      font-size: 0.95rem;
+      flex: 1 1 65%;
     }
-
-    .event-info strong {
-      font-size: 1rem;
-      color: var(--primary);
+    .event-actions {
+      flex: 0 1 30%;
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-end;
+      gap: 0.4rem;
     }
-
-    .event-buttons button {
-      margin-left: 0.5rem;
-      padding: 0.6rem 0.8rem;
+    .event-actions button {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
       border: none;
-      border-radius: 50%;
-      font-size: 1rem;
-      color: var(--white);
-      cursor: pointer;
+      background: var(--accent);
+      color: white;
+      white-space: nowrap;
     }
-
-    .edit {
-      background: var(--warning);
+    .event-actions button:hover {
+      background: var(--primary);
     }
-
-    .delete {
-      background: var(--danger);
-    }
-
-    dialog {
-      border: none;
-      border-radius: var(--radius);
-      width: 90%;
-      max-width: 400px;
-      padding: 1.5rem;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-    }
-
     dialog input, dialog label {
       width: 100%;
-      margin-bottom: 0.8rem;
+      margin-bottom: 0.6rem;
       font-size: 1rem;
     }
-
     dialog input {
       padding: 0.6rem;
       border-radius: 8px;
       border: 1px solid #ccc;
     }
-
-    dialog button {
-      padding: 0.6rem 1.2rem;
-      border-radius: var(--radius);
-      border: none;
-      margin-top: 0.5rem;
-      margin-right: 0.5rem;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-
-    #saveBtn {
-      background: var(--accent);
-      color: var(--white);
-    }
-
-    #cancelBtn {
-      background: #ccc;
-    }
   </style>
 </head>
-<body>
-
-<header>📅 Organizador de Eventos</header>
-
+<body><header>📅 Organizador de Eventos</header>
 <main>
   <button id="addEventBtn">➕ Agregar Evento</button>
   <button id="copyAllBtn">📋 Copiar Todo</button>
+  <button id="sortByEventBtn">Ordenar por Fecha de Evento</button>
+  <button id="sortByMountBtn">Ordenar por Fecha de Montaje</button>
   <div id="eventList"></div>
-</main>
-
-<dialog id="eventDialog">
-  <form method="dialog" id="eventForm">
+</main><dialog id="eventDialog">
+  <form id="eventForm">
     <input type="hidden" id="eventId">
-    <label for="fecha">Fecha</label>
-    <input type="date" id="fecha" required>
-    <label for="hora">Hora</label>
-    <input type="time" id="hora" required>
-    <label for="lugar">Lugar</label>
-    <input type="text" id="lugar" placeholder="Lugar del evento" required>
+    <label>Fecha del Evento</label>
+    <input type="date" id="fechaEvento" required>
+    <label>Hora del Evento</label>
+    <input type="time" id="horaEvento" required>
+    <label>Fecha de Montaje</label>
+    <input type="date" id="fechaMontaje" required>
+    <label>Hora de Montaje</label>
+    <input type="time" id="horaMontaje" required>
+    <label>Lugar</label>
+    <input type="text" id="lugar" required>
     <div style="text-align: right;">
-      <button id="saveBtn" type="submit">Guardar</button>
+      <button type="button" id="saveBtn">Guardar</button>
       <button type="button" id="cancelBtn">Cancelar</button>
     </div>
   </form>
-</dialog>
+</dialog><script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, orderBy, query } from 'https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js';
 
-<script>
-  let db;
-  const request = indexedDB.open("EventosDB", 1);
+const firebaseConfig = {
+  apiKey: "AIzaSyDl7eqNL5s9El_TaZpTE6i7-PwgubbtPkM",
+  authDomain: "eventos-bc9d1.firebaseapp.com",
+  projectId: "eventos-bc9d1",
+  storageBucket: "eventos-bc9d1.appspot.com",
+  messagingSenderId: "831523591170",
+  appId: "1:831523591170:web:c3e6b3367df0d47cf3c31b",
+  measurementId: "G-TFN83DR6C0"
+};
 
-  request.onupgradeneeded = (e) => {
-    db = e.target.result;
-    const store = db.createObjectStore("eventos", { keyPath: "id", autoIncrement: true });
-    store.createIndex("fecha", "fecha", { unique: false });
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const form = document.getElementById('eventForm');
+const dialog = document.getElementById('eventDialog');
+const eventList = document.getElementById('eventList');
+let sortBy = 'fechaEvento';
+
+function formatearFecha(fechaStr) {
+  const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const fecha = new Date(fechaStr + 'T00:00:00');
+  return `${dias[fecha.getDay()]}, ${fecha.toLocaleDateString('es-CO')}`;
+}
+
+document.getElementById('addEventBtn').onclick = () => {
+  form.reset();
+  document.getElementById('eventId').value = '';
+  dialog.showModal();
+};
+
+document.getElementById('cancelBtn').onclick = () => dialog.close();
+
+document.getElementById('saveBtn').onclick = async () => {
+  const fechaEv = new Date(document.getElementById('fechaEvento').value);
+  const fechaMont = new Date(document.getElementById('fechaMontaje').value);
+
+  if (fechaMont > fechaEv) {
+    alert("⚠️ La fecha de montaje no puede ser posterior a la fecha del evento.");
+    return;
+  }
+
+  const evento = {
+    fechaEvento: document.getElementById('fechaEvento').value,
+    horaEvento: document.getElementById('horaEvento').value,
+    fechaMontaje: document.getElementById('fechaMontaje').value,
+    horaMontaje: document.getElementById('horaMontaje').value,
+    lugar: document.getElementById('lugar').value
   };
 
-  request.onsuccess = (e) => {
-    db = e.target.result;
-    mostrarEventos();
-  };
+  const id = document.getElementById('eventId').value;
+  if (id) {
+    await updateDoc(doc(db, 'eventos', id), evento);
+  } else {
+    await addDoc(collection(db, 'eventos'), evento);
+  }
 
-  request.onerror = (e) => {
-    console.error("IndexedDB error:", e.target.errorCode);
-  };
+  dialog.close();
+  cargarEventos();
+};
 
-  const eventList = document.getElementById('eventList');
-  const dialog = document.getElementById('eventDialog');
-  const form = document.getElementById('eventForm');
-  const fechaInput = document.getElementById('fecha');
-  const horaInput = document.getElementById('hora');
-  const lugarInput = document.getElementById('lugar');
-  const eventIdInput = document.getElementById('eventId');
-  const cancelBtn = document.getElementById('cancelBtn');
-  const copyAllBtn = document.getElementById('copyAllBtn');
+document.getElementById('sortByEventBtn').onclick = () => {
+  sortBy = 'fechaEvento';
+  cargarEventos();
+};
 
-  const formatearFecha = (fechaStr) => {
-    const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const fecha = new Date(fechaStr + "T00:00:00");
-    const diaSemana = dias[fecha.getDay()];
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const año = fecha.getFullYear();
-    return `${diaSemana}, ${dia}/${mes}/${año}`;
-  };
+document.getElementById('sortByMountBtn').onclick = () => {
+  sortBy = 'fechaMontaje';
+  cargarEventos();
+};
 
-  document.getElementById('addEventBtn').onclick = () => {
-    form.reset();
-    eventIdInput.value = '';
-    dialog.showModal();
-  };
+async function cargarEventos() {
+  eventList.innerHTML = '';
+  const q = query(collection(db, 'eventos'), orderBy(sortBy));
+  const res = await getDocs(q);
+  res.forEach(docSnap => {
+    const e = docSnap.data();
+    const div = document.createElement('div');
+    div.className = 'event';
+    div.innerHTML = `
+  <div class="event-info">
+    <strong>${formatearFecha(e.fechaEvento)} ${e.horaEvento}</strong><br>
+    <em>Montaje:</em> ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}<br>
+    <em>Lugar:</em> ${e.lugar}
+  </div>
+  <div class="event-actions">
+    <button onclick="editar('${docSnap.id}')">✏️</button>
+    <button onclick="eliminar('${docSnap.id}')">🗑️</button>
+  </div>
+`;
+    eventList.appendChild(div);
+  });
+}
 
-  cancelBtn.onclick = () => dialog.close();
-
-  form.onsubmit = (e) => {
-    e.preventDefault();
-    const evento = {
-      fecha: fechaInput.value,
-      hora: horaInput.value,
-      lugar: lugarInput.value
-    };
-    const id = parseInt(eventIdInput.value);
-    if (id) {
-      evento.id = id;
-      actualizarEvento(evento);
-    } else {
-      guardarEvento(evento);
+window.editar = async (id) => {
+  const d = await getDocs(collection(db, 'eventos'));
+  d.forEach(docSnap => {
+    if (docSnap.id === id) {
+      const e = docSnap.data();
+      document.getElementById('eventId').value = id;
+      document.getElementById('fechaEvento').value = e.fechaEvento;
+      document.getElementById('horaEvento').value = e.horaEvento;
+      document.getElementById('fechaMontaje').value = e.fechaMontaje;
+      document.getElementById('horaMontaje').value = e.horaMontaje;
+      document.getElementById('lugar').value = e.lugar;
+      dialog.showModal();
     }
-    dialog.close();
-  };
+  });
+};
 
-  function guardarEvento(evento) {
-    const tx = db.transaction("eventos", "readwrite");
-    const store = tx.objectStore("eventos");
-    store.add(evento).onsuccess = mostrarEventos;
+window.eliminar = async (id) => {
+  if (confirm('¿Eliminar este evento?')) {
+    await deleteDoc(doc(db, 'eventos', id));
+    cargarEventos();
   }
+};
 
-  function actualizarEvento(evento) {
-    const tx = db.transaction("eventos", "readwrite");
-    const store = tx.objectStore("eventos");
-    store.put(evento).onsuccess = mostrarEventos;
-  }
+document.getElementById('copyAllBtn').onclick = async () => {
+  const q = query(collection(db, 'eventos'), orderBy(sortBy));
+  const res = await getDocs(q);
+  let texto = '';
+  res.forEach(docSnap => {
+    const e = docSnap.data();
+    texto += `📍 Evento\n📅 Evento: ${formatearFecha(e.fechaEvento)} ${e.horaEvento}\n🔧 Montaje: ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}\n📌 Lugar: ${e.lugar}\n------------------------------\n\n`;
+  });
+  await navigator.clipboard.writeText(texto);
+  alert("✅ Copiado al portapapeles");
+};
 
-  function eliminarEvento(id) {
-    const tx = db.transaction("eventos", "readwrite");
-    const store = tx.objectStore("eventos");
-    store.delete(id).onsuccess = mostrarEventos;
-  }
-
-  function mostrarEventos() {
-    const tx = db.transaction("eventos", "readonly");
-    const store = tx.objectStore("eventos");
-    const request = store.getAll();
-
-    request.onsuccess = () => {
-      const eventos = request.result.sort((a, b) => {
-        return new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`);
-      });
-
-      eventList.innerHTML = "";
-      eventos.forEach(evento => {
-        const div = document.createElement("div");
-        div.className = "event";
-
-        const info = document.createElement("div");
-        info.className = "event-info";
-        info.innerHTML = `<strong>${formatearFecha(evento.fecha)}</strong> - ${evento.hora}<br>${evento.lugar}`;
-
-        const btns = document.createElement("div");
-        btns.className = "event-buttons";
-
-        const editBtn = document.createElement("button");
-        editBtn.className = "edit";
-        editBtn.innerHTML = "✏️";
-        editBtn.onclick = () => {
-          eventIdInput.value = evento.id;
-          fechaInput.value = evento.fecha;
-          horaInput.value = evento.hora;
-          lugarInput.value = evento.lugar;
-          dialog.showModal();
-        };
-
-        const deleteBtn = document.createElement("button");
-        deleteBtn.className = "delete";
-        deleteBtn.innerHTML = "🗑️";
-        deleteBtn.onclick = () => {
-          if (confirm("¿Eliminar este evento?")) {
-            eliminarEvento(evento.id);
-          }
-        };
-
-        btns.appendChild(editBtn);
-        btns.appendChild(deleteBtn);
-        div.appendChild(info);
-        div.appendChild(btns);
-        eventList.appendChild(div);
-      });
-    };
-  }
-
-  copyAllBtn.onclick = () => {
-    const tx = db.transaction("eventos", "readonly");
-    const store = tx.objectStore("eventos");
-    const request = store.getAll();
-
-    request.onsuccess = () => {
-      const eventos = request.result.sort((a, b) => {
-        return new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`);
-      });
-
-      if (eventos.length === 0) {
-        alert("No hay eventos para copiar.");
-        return;
-      }
-
-      let texto = "";
-      eventos.forEach(evento => {
-        texto += `📍 Evento\n📅 Fecha: ${formatearFecha(evento.fecha)}\n🕒 Hora: ${evento.hora}\n📌 Lugar: ${evento.lugar}\n------------------------------\n\n`;
-      });
-
-      navigator.clipboard.writeText(texto).then(() => {
-        alert("✅ Eventos copiados al portapapeles.");
-      }).catch(err => {
-        alert("❌ Error al copiar: " + err);
-      });
-    };
-  };
-</script>
-
-</body>
+cargarEventos();
+</script></body>
 </html>
