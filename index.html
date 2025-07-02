@@ -214,24 +214,36 @@
     }
 
     function mostrarEventos() {
-      eventosDiv.innerHTML = "";
-      eventos.forEach(e => {
-        const div = document.createElement("div");
-        div.className = "event";
-        div.innerHTML = `
-          <div class="event-info">
-            <div class="${mostrarMontajeEnNegrita ? 'normal' : 'negrita'}">${formatearFecha(e.fechaEvento)} ${e.horaEvento}</div>
-            <div class="${mostrarMontajeEnNegrita ? 'negrita' : 'normal'}">Montaje: ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}</div>
-            <div><em>Lugar:</em> ${e.lugar}</div>
-          </div>
-          <div class="event-actions">
-            <button onclick="editar('${e.id}')">✏️</button>
-            <button onclick="eliminar('${e.id}')">🗑️</button>
-          </div>
-        `;
-        eventosDiv.appendChild(div);
-      });
-    }
+  eventosDiv.innerHTML = "";
+  eventos.forEach(e => {
+    const div = document.createElement("div");
+    div.className = "event";
+    div.innerHTML = `
+      <div class="event-info">
+        <div class="${mostrarMontajeEnNegrita ? 'normal' : 'negrita'}">${formatearFecha(e.fechaEvento)} ${formatearHoraAMPM(e.horaEvento)}</div>
+        <div class="${mostrarMontajeEnNegrita ? 'negrita' : 'normal'}">Montaje: ${formatearFecha(e.fechaMontaje)} ${formatearHoraAMPM(e.horaMontaje)}</div>
+        <div><em>Lugar:</em> ${e.lugar}</div>
+      </div>
+      <div class="event-actions">
+        <button onclick="editar('${e.id}')">✏️</button>
+        <button onclick="eliminar('${e.id}')">🗑️</button>
+      </div>
+    `;
+    eventosDiv.appendChild(div);
+  });
+}
+
+function formatearHoraAMPM(hora24) {
+  const [horaStr, minutos] = hora24.split(":");
+  let hora = parseInt(horaStr);
+
+  if (hora === 24) hora = 0;
+
+  const sufijo = hora < 12 ? "am" : "pm";
+  const hora12 = (hora % 12 === 0 ? 12 : hora % 12);
+
+  return `${hora12}:${minutos} ${sufijo}`;
+}
 
     form.onsubmit = async e => {
       e.preventDefault();
