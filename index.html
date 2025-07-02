@@ -13,6 +13,17 @@
       --white: #fff;
       --radius: 12px;
     }
+
+.negrita-mayuscula {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+.resaltado {
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  padding: 0.4rem;
+  margin-bottom: 0.3rem;
+}
     body {
       margin: 0;
       padding: 0;
@@ -213,25 +224,52 @@
       mostrarEventos();
     }
 
-    function mostrarEventos() {
+
+
+
+function mostrarEventos() {
   eventosDiv.innerHTML = "";
   eventos.forEach(e => {
+    const eventoClase = mostrarMontajeEnNegrita ? 'normal' : 'negrita-mayuscula';
+    const montajeClase = mostrarMontajeEnNegrita ? 'negrita-mayuscula' : 'normal';
+
     const div = document.createElement("div");
     div.className = "event";
+
+    // Evento: resaltado si se ordena por evento
+    const eventoHTML = `
+      <div class="${!mostrarMontajeEnNegrita ? 'resaltado' : ''} ${eventoClase}">
+        🎉 <strong>Fecha evento:</strong> ${formatearFecha(e.fechaEvento)}<br>
+        🎂 <strong>Hora evento:</strong> ${formatearHoraAMPM(e.horaEvento)}
+      </div>`;
+
+    // Montaje: resaltado si se ordena por montaje
+    const montajeHTML = `
+      <div class="${mostrarMontajeEnNegrita ? 'resaltado' : ''} ${montajeClase}">
+        💪 <strong>Fecha montaje:</strong> ${formatearFecha(e.fechaMontaje)}<br>
+        ⌛ <strong>Hora montaje:</strong> ${formatearHoraAMPM(e.horaMontaje)}
+      </div>`;
+
     div.innerHTML = `
-      <div class="event-info">
-        <div class="${mostrarMontajeEnNegrita ? 'normal' : 'negrita'}">${formatearFecha(e.fechaEvento)} ${formatearHoraAMPM(e.horaEvento)}</div>
-        <div class="${mostrarMontajeEnNegrita ? 'negrita' : 'normal'}">Montaje: ${formatearFecha(e.fechaMontaje)} ${formatearHoraAMPM(e.horaMontaje)}</div>
-        <div><em>Lugar:</em> ${e.lugar}</div>
-      </div>
-      <div class="event-actions">
-        <button onclick="editar('${e.id}')">✏️</button>
-        <button onclick="eliminar('${e.id}')">🗑️</button>
-      </div>
-    `;
+  <div class="event-info">
+    ${eventoHTML}
+    ${montajeHTML}
+    <div>
+      📍🏗️ <strong>Ubicación y objetivo:</strong> ${e.lugar}
+    </div>
+  </div>
+  <div class="event-actions">
+    <button onclick="editar('${e.id}')">✏️</button>
+    <button onclick="eliminar('${e.id}')">🗑️</button>
+  </div>
+`;
+
     eventosDiv.appendChild(div);
   });
 }
+
+
+
 
 function formatearHoraAMPM(hora24) {
   const [horaStr, minutos] = hora24.split(":");
