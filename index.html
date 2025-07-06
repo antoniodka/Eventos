@@ -160,6 +160,9 @@
     <button id="sortByMountBtn">🏗️ Ordenar por montaje</button>
     <button id="copyAllBtn">📋 Copiar todo</button>
 
+<button id="viewHistoryBtn">📜 Ver historial</button>
+
+
 <h2 id="tituloOrganizacion" style="text-align:center; margin-top:1rem; color:#2c3e50;"></h2>
     <div id="eventos"></div>
   </main>  <dialog id="eventDialog">
@@ -181,206 +184,251 @@
       <input type="password" id="passwordInput" placeholder="Clave de acceso" autofocus required>
       <button id="checkPasswordBtn" type="button">Ingresar</button>
     </form>
-  </dialog>  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+  </dialog><script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDl7eqNL5s9El_TaZpTE6i7-PwgubbtPkM",
-      authDomain: "eventos-bc9d1.firebaseapp.com",
-      projectId: "eventos-bc9d1",
-      storageBucket: "eventos-bc9d1.appspot.com",
-      messagingSenderId: "831523591170",
-      appId: "1:831523591170:web:c3e6b3367df0d47cf3c31b",
-      measurementId: "G-TFN83DR6C0"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDl7eqNL5s9El_TaZpTE6i7-PwgubbtPkM",
+    authDomain: "eventos-bc9d1.firebaseapp.com",
+    projectId: "eventos-bc9d1",
+    storageBucket: "eventos-bc9d1.appspot.com",
+    messagingSenderId: "831523591170",
+    appId: "1:831523591170:web:c3e6b3367df0d47cf3c31b",
+    measurementId: "G-TFN83DR6C0"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    const dialog = document.getElementById("eventDialog");
-    const eventosDiv = document.getElementById("eventos");
-    const form = document.getElementById("eventForm");
+  const dialog = document.getElementById("eventDialog");
+  const eventosDiv = document.getElementById("eventos");
+  const form = document.getElementById("eventForm");
 
-    let eventos = [];
-    let mostrarMontajeEnNegrita = false;
+  let eventos = [];
+  let mostrarMontajeEnNegrita = false;
 
-    function formatearFecha(fechaStr) {
-  const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  const [year, month, day] = fechaStr.split('-');
-  const fecha = new Date(Number(year), Number(month) - 1, Number(day));
-  return dias[fecha.getDay()] + ', ' + fecha.toLocaleDateString();
-}
+  function formatearFecha(fechaStr) {
+    const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    const [year, month, day] = fechaStr.split('-');
+    const fecha = new Date(Number(year), Number(month) - 1, Number(day));
+    return dias[fecha.getDay()] + ', ' + fecha.toLocaleDateString();
+  }
 
-    async function cargarEventos() {
-      eventosDiv.innerHTML = "Cargando...";
-      const query = await getDocs(collection(db, 'eventos'));
-      eventos = [];
-      eventosDiv.innerHTML = "";
-      query.forEach(docSnap => {
-        const e = docSnap.data();
-        eventos.push({...e, id: docSnap.id});
-      });
-      mostrarEventos();
+  function formatearHoraAMPM(hora24) {
+    const [horaStr, minutos] = hora24.split(":");
+    let hora = parseInt(horaStr);
+    if (hora === 24) hora = 0;
+    const sufijo = hora < 12 ? "am" : "pm";
+    const hora12 = (hora % 12 === 0 ? 12 : hora % 12);
+    return `${hora12}:${minutos} ${sufijo}`;
+  }
+
+  async function cargarEventos() {
+    eventosDiv.innerHTML = "Cargando...";
+    const query = await getDocs(collection(db, 'eventos'));
+    eventos = [];
+    eventosDiv.innerHTML = "";
+    query.forEach(docSnap => {
+      const e = docSnap.data();
+      eventos.push({ ...e, id: docSnap.id });
+    });
+
+    // Ordenar automáticamente por evento al cargar
+    document.getElementById("sortByEventBtn").click();
+  }
+
+  function mostrarEventos() {
+    eventosDiv.innerHTML = "";
+    eventos.forEach(e => {
+      const eventoClase = mostrarMontajeEnNegrita ? 'normal' : 'negrita-mayuscula';
+      const montajeClase = mostrarMontajeEnNegrita ? 'negrita-mayuscula' : 'normal';
+
+      const div = document.createElement("div");
+      div.className = "event";
+
+      const eventoHTML = `
+        <div class="${!mostrarMontajeEnNegrita ? 'resaltado' : ''} ${eventoClase}">
+          🎉 <strong>Fecha evento:</strong> ${formatearFecha(e.fechaEvento)}<br>
+          🎂 <strong>Hora evento:</strong> ${formatearHoraAMPM(e.horaEvento)}
+        </div>`;
+
+      const montajeHTML = `
+        <div class="${mostrarMontajeEnNegrita ? 'resaltado' : ''} ${montajeClase}">
+          💪 <strong>Fecha montaje:</strong> ${formatearFecha(e.fechaMontaje)}<br>
+          ⌛ <strong>Hora montaje:</strong> ${formatearHoraAMPM(e.horaMontaje)}
+        </div>`;
+
+      div.innerHTML = `
+        <div class="event-info">
+          ${eventoHTML}
+          ${montajeHTML}
+          <div>
+            📍🏗️ <strong>Ubicación y objetivo:</strong> ${e.lugar}
+          </div>
+        </div>
+        <div class="event-actions">
+          <button onclick="editar('${e.id}')">✏️</button>
+          <button onclick="eliminar('${e.id}')">🗑️</button>
+        </div>
+      `;
+      eventosDiv.appendChild(div);
+    });
+  }
+
+  async function mostrarHistorial() {
+    eventosDiv.innerHTML = "Cargando historial...";
+    const query = await getDocs(collection(db, 'eventos_eliminados'));
+    const eliminados = [];
+    query.forEach(docSnap => {
+      eliminados.push({ ...docSnap.data(), id: docSnap.id });
+    });
+
+    eliminados.sort((a, b) => new Date(a.fechaEvento) - new Date(b.fechaEvento));
+
+    eventosDiv.innerHTML = "";
+    document.getElementById("tituloOrganizacion").textContent = "📜 Historial de eventos eliminados";
+
+    eliminados.forEach(e => {
+      const div = document.createElement("div");
+      div.className = "event";
+      div.innerHTML = `
+        <div class="event-info">
+          <div>
+            🎉 <strong>Fecha evento:</strong> ${formatearFecha(e.fechaEvento)}<br>
+            🎂 <strong>Hora evento:</strong> ${formatearHoraAMPM(e.horaEvento)}
+          </div>
+          <div>
+            💪 <strong>Fecha montaje:</strong> ${formatearFecha(e.fechaMontaje)}<br>
+            ⌛ <strong>Hora montaje:</strong> ${formatearHoraAMPM(e.horaMontaje)}
+          </div>
+          <div>
+            📍🏗️ <strong>Ubicación y objetivo:</strong> ${e.lugar}
+          </div>
+        </div>
+        <div class="event-actions">
+          <button onclick="eliminarHistorial('${e.id}')">🗑️</button>
+        </div>
+      `;
+      eventosDiv.appendChild(div);
+    });
+  }
+
+  window.eliminarHistorial = async id => {
+    const confirmar = confirm("¿Eliminar definitivamente este evento del historial?");
+    if (confirmar) {
+      await deleteDoc(doc(db, 'eventos_eliminados', id));
+      mostrarHistorial();
+    }
+  };
+
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const fechaEvento = form.fechaEvento.value;
+    const horaEvento = form.horaEvento.value;
+    const fechaMontaje = form.fechaMontaje.value;
+    const horaMontaje = form.horaMontaje.value;
+    const lugar = form.lugar.value;
+
+    if (new Date(`${fechaMontaje}T${horaMontaje}`) > new Date(`${fechaEvento}T${horaEvento}`)) {
+      alert("❌ La fecha de montaje no puede ser posterior al evento");
+      return;
     }
 
+    const nuevo = { fechaEvento, horaEvento, fechaMontaje, horaMontaje, lugar };
 
-
-
-function mostrarEventos() {
-  eventosDiv.innerHTML = "";
-  eventos.forEach(e => {
-    const eventoClase = mostrarMontajeEnNegrita ? 'normal' : 'negrita-mayuscula';
-    const montajeClase = mostrarMontajeEnNegrita ? 'negrita-mayuscula' : 'normal';
-
-    const div = document.createElement("div");
-    div.className = "event";
-
-    // Evento: resaltado si se ordena por evento
-    const eventoHTML = `
-      <div class="${!mostrarMontajeEnNegrita ? 'resaltado' : ''} ${eventoClase}">
-        🎉 <strong>Fecha evento:</strong> ${formatearFecha(e.fechaEvento)}<br>
-        🎂 <strong>Hora evento:</strong> ${formatearHoraAMPM(e.horaEvento)}
-      </div>`;
-
-    // Montaje: resaltado si se ordena por montaje
-    const montajeHTML = `
-      <div class="${mostrarMontajeEnNegrita ? 'resaltado' : ''} ${montajeClase}">
-        💪 <strong>Fecha montaje:</strong> ${formatearFecha(e.fechaMontaje)}<br>
-        ⌛ <strong>Hora montaje:</strong> ${formatearHoraAMPM(e.horaMontaje)}
-      </div>`;
-
-    div.innerHTML = `
-  <div class="event-info">
-    ${eventoHTML}
-    ${montajeHTML}
-    <div>
-      📍🏗️ <strong>Ubicación y objetivo:</strong> ${e.lugar}
-    </div>
-  </div>
-  <div class="event-actions">
-    <button onclick="editar('${e.id}')">✏️</button>
-    <button onclick="eliminar('${e.id}')">🗑️</button>
-  </div>
-`;
-
-    eventosDiv.appendChild(div);
-  });
-}
-
-
-
-
-function formatearHoraAMPM(hora24) {
-  const [horaStr, minutos] = hora24.split(":");
-  let hora = parseInt(horaStr);
-
-  if (hora === 24) hora = 0;
-
-  const sufijo = hora < 12 ? "am" : "pm";
-  const hora12 = (hora % 12 === 0 ? 12 : hora % 12);
-
-  return `${hora12}:${minutos} ${sufijo}`;
-}
-
-    form.onsubmit = async e => {
-      e.preventDefault();
-      const fechaEvento = form.fechaEvento.value;
-      const horaEvento = form.horaEvento.value;
-      const fechaMontaje = form.fechaMontaje.value;
-      const horaMontaje = form.horaMontaje.value;
-      const lugar = form.lugar.value;
-
-      if (new Date(`${fechaMontaje}T${horaMontaje}`) > new Date(`${fechaEvento}T${horaEvento}`)) {
-        alert("❌ La fecha de montaje no puede ser posterior al evento");
-        return;
-      }
-
-      const nuevo = { fechaEvento, horaEvento, fechaMontaje, horaMontaje, lugar };
-
-      if (form.eventId.value) {
-        await updateDoc(doc(db, 'eventos', form.eventId.value), nuevo);
-      } else {
-        await addDoc(collection(db, 'eventos'), nuevo);
-      }
-
-      dialog.close();
-      cargarEventos();
-    };
-
-    document.getElementById("sortByEventBtn").onclick = () => {
-  eventos.sort((a, b) => new Date(a.fechaEvento) - new Date(b.fechaEvento));
-  mostrarMontajeEnNegrita = false;
-  document.getElementById("tituloOrganizacion").textContent = "🗓 Eventos organizados por fecha de evento";
-  mostrarEventos();
-};
-document.getElementById("sortByMountBtn").onclick = () => {
-  eventos.sort((a, b) => new Date(a.fechaMontaje) - new Date(b.fechaMontaje));
-  mostrarMontajeEnNegrita = true;
-  document.getElementById("tituloOrganizacion").textContent = "🏗 Eventos organizados por fecha de montaje";
-  mostrarEventos();
-};
-
-    document.getElementById("copyAllBtn").onclick = () => {
-      let text = eventos.map(e => `🗓 ${formatearFecha(e.fechaEvento)} ${e.horaEvento}\n🏗 ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}\n📍 ${e.lugar}\n---`).join("\n\n");
-      navigator.clipboard.writeText(text);
-      alert("📋 Lista copiada al portapapeles");
-    };
-
-    let passwordValidated = false;
-    function requirePassword(action) {
-      if (!passwordValidated) {
-        const dialogPass = document.getElementById('passwordDialog');
-        const input = document.getElementById('passwordInput');
-        const checkBtn = document.getElementById('checkPasswordBtn');
-
-        dialogPass.showModal();
-        checkBtn.onclick = () => {
-          if (input.value === '1253') {
-            passwordValidated = true;
-            dialogPass.close();
-            action();
-          } else {
-            alert("❌ Clave incorrecta");
-          }
-        };
-      } else {
-        action();
-      }
+    if (form.eventId.value) {
+      await updateDoc(doc(db, 'eventos', form.eventId.value), nuevo);
+    } else {
+      await addDoc(collection(db, 'eventos'), nuevo);
     }
 
-    document.getElementById("addEventBtn").onclick = () => {
-      requirePassword(() => {
-        form.reset();
-        form.eventId.value = "";
-        dialog.showModal();
-      });
-    };
+    dialog.close();
+    cargarEventos();
+  };
 
-    window.eliminar = id => {
-      requirePassword(async () => {
-        if (confirm("¿Eliminar este evento?")) {
-          await deleteDoc(doc(db, 'eventos', id));
-          cargarEventos();
-        }
-      });
-    };
-
-    window.editar = id => {
-      requirePassword(async () => {
-        const evento = eventos.find(e => e.id === id);
-        if (evento) {
-          form.eventId.value = id;
-          form.fechaEvento.value = evento.fechaEvento;
-          form.horaEvento.value = evento.horaEvento;
-          form.fechaMontaje.value = evento.fechaMontaje;
-          form.horaMontaje.value = evento.horaMontaje;
-          form.lugar.value = evento.lugar;
-          dialog.showModal();
-        }
-      });
-    };
-
+  document.getElementById("sortByEventBtn").onclick = () => {
+    eventos.sort((a, b) => new Date(a.fechaEvento) - new Date(b.fechaEvento));
+    mostrarMontajeEnNegrita = false;
+    document.getElementById("tituloOrganizacion").textContent = "🗓 Eventos organizados por fecha de evento";
     mostrarEventos();
-  </script></body>
+  };
+
+  document.getElementById("sortByMountBtn").onclick = () => {
+    eventos.sort((a, b) => new Date(a.fechaMontaje) - new Date(b.fechaMontaje));
+    mostrarMontajeEnNegrita = true;
+    document.getElementById("tituloOrganizacion").textContent = "🏗 Eventos organizados por fecha de montaje";
+    mostrarEventos();
+  };
+
+  document.getElementById("viewHistoryBtn").onclick = () => {
+    mostrarHistorial();
+  };
+
+  document.getElementById("copyAllBtn").onclick = () => {
+    let text = eventos.map(e =>
+      `🗓 ${formatearFecha(e.fechaEvento)} ${e.horaEvento}\n🏗 ${formatearFecha(e.fechaMontaje)} ${e.horaMontaje}\n📍 ${e.lugar}\n---`
+    ).join("\n\n");
+    navigator.clipboard.writeText(text);
+    alert("📋 Lista copiada al portapapeles");
+  };
+
+  let passwordValidated = false;
+  function requirePassword(action) {
+    if (!passwordValidated) {
+      const dialogPass = document.getElementById('passwordDialog');
+      const input = document.getElementById('passwordInput');
+      const checkBtn = document.getElementById('checkPasswordBtn');
+
+      dialogPass.showModal();
+      checkBtn.onclick = () => {
+        if (input.value === '1253') {
+          passwordValidated = true;
+          dialogPass.close();
+          action();
+        } else {
+          alert("❌ Clave incorrecta");
+        }
+      };
+    } else {
+      action();
+    }
+  }
+
+  document.getElementById("addEventBtn").onclick = () => {
+    requirePassword(() => {
+      form.reset();
+      form.eventId.value = "";
+      dialog.showModal();
+    });
+  };
+
+  window.eliminar = id => {
+    requirePassword(async () => {
+      if (confirm("¿Eliminar este evento?")) {
+        const eliminado = eventos.find(e => e.id === id);
+        await addDoc(collection(db, 'eventos_eliminados'), eliminado);
+        await deleteDoc(doc(db, 'eventos', id));
+        cargarEventos();
+      }
+    });
+  };
+
+  window.editar = id => {
+    requirePassword(async () => {
+      const evento = eventos.find(e => e.id === id);
+      if (evento) {
+        form.eventId.value = id;
+        form.fechaEvento.value = evento.fechaEvento;
+        form.horaEvento.value = evento.horaEvento;
+        form.fechaMontaje.value = evento.fechaMontaje;
+        form.horaMontaje.value = evento.horaMontaje;
+        form.lugar.value = evento.lugar;
+        dialog.showModal();
+      }
+    });
+  };
+
+  cargarEventos();
+</script></body>
 </html>
